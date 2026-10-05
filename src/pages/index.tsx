@@ -39,7 +39,7 @@ function Hero() {
           </Link>
         </div>
         <div className={styles.badgeRow}>
-          <span className={styles.badge}>alpha · v0.4.1</span>
+          <span className={styles.badge}>alpha · v0.5.0</span>
           <span className={styles.badge}>Apache-2.0</span>
           <span className={styles.badge}>Rust 1.95+</span>
         </div>
@@ -71,7 +71,9 @@ function Install() {
           <CodeBlock language="bash">{`# stable — published on crates.io
 cargo install ferrus
 # or pin an exact version:
-cargo install --locked ferrus@0.4.1-alpha.1`}</CodeBlock>
+cargo install --locked ferrus@0.5.0-alpha.1
+# with the experimental Nano executor:
+cargo install --locked ferrus@0.5.0-alpha.1 --features nano-openai,nano-mcp`}</CodeBlock>
         </div>
 
         <div>
@@ -112,9 +114,39 @@ ferrus                                                       # enter HQ`}</CodeB
   );
 }
 
-function RepositoryGraph() {
+function Nano() {
   return (
     <section className={styles.section}>
+      <div className="container">
+        <Heading as="h2" className={styles.sectionTitle}>
+          <span className={styles.prompt}>$</span> Nano
+        </Heading>
+        <p className={styles.sectionLead}>
+          New in 0.5: ferrus's own native agent harness. Nano runs as a
+          headless Executor against a local OpenAI-compatible model such as
+          LM Studio. It calls ferrus operations (check, submit, the repository
+          graph, project memory) directly in Rust, with no MCP round-trip.
+        </p>
+        <CodeBlock language="bash">{`ferrus register --supervisor claude-code \\
+  --executor nano --executor-model <loaded-model-id>   # creates ~/.ferrus/nano.toml
+ferrus                                                 # then /task as usual`}</CodeBlock>
+        <p className={styles.sectionLead}>
+          It ships with digest-checked patches, bounded shell sessions, a
+          token-budgeted working set with compaction, opt-in stdio MCP tools,
+          and crash recovery that reconciles every in-flight effect.
+          Experimental: Executor-only and headless for now.
+        </p>
+        <p className={styles.sectionLead}>
+          <Link to="/docs/nano">Read the Nano docs →</Link>
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function RepositoryGraph() {
+  return (
+    <section className={clsx(styles.section, styles.sectionAlt)}>
       <div className="container">
         <Heading as="h2" className={styles.sectionTitle}>
           <span className={styles.prompt}>$</span> Repository graph
@@ -152,7 +184,7 @@ function Features() {
     },
     {
       title: 'Agent-agnostic',
-      body: 'Claude Code, Codex, Qwen Code, goose, and opencode are interchangeable workers — including local models.',
+      body: 'Claude Code, Codex, Qwen Code, goose, opencode, and the native Nano executor are interchangeable workers — including local models.',
     },
     {
       title: 'Crash-safe',
@@ -172,7 +204,7 @@ function Features() {
     },
   ];
   return (
-    <section className={clsx(styles.section, styles.sectionAlt)}>
+    <section className={styles.section}>
       <div className="container">
         <Heading as="h2" className={styles.sectionTitle}>
           <span className={styles.prompt}>$</span> Why ferrus
@@ -200,6 +232,7 @@ export default function Home(): ReactNode {
       <main>
         <Install />
         <QuickStart />
+        <Nano />
         <RepositoryGraph />
         <Features />
       </main>

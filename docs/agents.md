@@ -12,7 +12,9 @@ runtime, coordination, and SQLite-backed state — the agent itself just reads
 and writes files via its own tools and calls ferrus's MCP server to drive
 task transitions. Backend-specific behavior lives in `src/agents/{claude,
 codex, qwen, opencode, goose}` and is normalized behind shared Supervisor/
-Executor contracts.
+Executor contracts. The exception is [Nano](/docs/nano), ferrus's own
+native harness. It lives in `src/nano/` and calls ferrus operations directly
+instead of going through MCP.
 
 ## Backends
 
@@ -23,9 +25,11 @@ Executor contracts.
 | **Qwen Code** | experimental | `.qwen/settings.json` |
 | **goose** | experimental | none — attached at launch via `--with-extension` |
 | **opencode** | experimental | `opencode.json` |
+| **Nano** | experimental · headless Executor only | `[hq.executor]` in `ferrus.toml`; creates `~/.ferrus/nano.toml` on first registration |
 
-Each backend loads `ferrus serve` as an MCP server so its tool calls flow
-back into the ferrus task state machine.
+Each external backend loads `ferrus serve` as an MCP server so its tool
+calls flow back into the ferrus task state machine. Nano needs no MCP
+server, because it drives the same operations natively.
 
 ### goose
 
@@ -56,6 +60,21 @@ provisions — it may operate on the canonical checkout instead. Use opencode
 for the **supervisor/reviewer** role for now; treat the executor role as
 not yet supported.
 
+### Nano
+
+New in 0.5.0-alpha.1. Nano is ferrus's built-in agent harness and talks to
+an OpenAI-compatible Chat Completions endpoint, such as a local LM Studio
+server. It runs **only as a headless Executor**, so pair it with an external
+supervisor:
+
+```bash
+ferrus register --supervisor claude-code --executor nano --executor-model YOUR_LOADED_MODEL_ID
+```
+
+Prebuilt release archives include Nano. A `cargo install` needs
+`--features nano-openai,nano-mcp`. See [Nano](/docs/nano) for setup,
+provider settings, and what it can do today.
+
 ## Roles
 
 Each task runs up to three roles. A single backend can play all three, or
@@ -67,6 +86,9 @@ you can mix and match:
 - **Reviewer** — spawned automatically on submission; runs headlessly and
   exits after approve/reject. In practice, the Reviewer is the Supervisor
   backend relaunched in review mode.
+
+Nano can only play the **Executor**. Registering it as `--supervisor` is
+rejected.
 
 ## Register
 
@@ -80,7 +102,10 @@ ferrus register \
 
 Model overrides are optional — omit them to use each agent's default. You
 can also change them interactively from HQ with `/model`, or leave a model
-unset and target a local backend (goose/opencode) for cost-free iteration.
+unset and target a local backend (goose/opencode/Nano) for cost-free
+iteration. Nano is the exception: its first registration needs
+`--executor-model`, because ferrus writes that model into the new
+`nano.toml`.
 
 ## Tools exposed per role
 
@@ -97,6 +122,9 @@ Role-scoped tool surfaces are a hard boundary — an executor process
 physically cannot call `approve`, and a supervisor physically cannot call
 `submit`. This is what makes the loop safe to drive from "untrusted"
 agents.
+
+Nano doesn't use `ferrus serve`. It gets its own executor-only native tool
+set, listed in [What Nano can do today](/docs/nano#what-nano-can-do-today).
 
 ### Retrieval tools
 

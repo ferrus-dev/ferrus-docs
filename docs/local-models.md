@@ -7,9 +7,15 @@ slug: /local-models
 
 # Tuning local models
 
-`goose` is ferrus's local-model-friendly backend: it's MCP-native, needs no
-project config file, and works well against a local LM Studio or Ollama
-endpoint set with `goose configure` (see [Supported agents](/docs/agents)).
+There are two local-model-friendly executors:
+
+- **[Nano](/docs/nano)** (new in 0.5): ferrus's own native harness. It talks
+  directly to LM Studio's OpenAI-compatible endpoint and runs headless as
+  the executor only.
+- **`goose`**: MCP-native, needs no project config file, and works well
+  against a local LM Studio or Ollama endpoint set with `goose configure`.
+  See [Supported agents](/docs/agents).
+
 `opencode` can also drive a local model, but only for the supervisor/
 reviewer role today.
 
@@ -51,6 +57,12 @@ you're running below them, this is usually the highest-leverage fix:
 These numbers are **Qwen3-specific** — they come from Qwen's own guidance,
 not from ferrus. For another model family (Gemma included) start from that
 model's own recommended defaults instead of copying this table verbatim.
+
+:::note[Nano]
+`nano.toml` accepts only `temperature` from this table. It rejects unknown
+keys, so set `top_p`, `top_k`, `min_p`, and `presence_penalty` as the
+loaded model's defaults in LM Studio.
+:::
 
 A temperature noticeably below 0.6 (e.g. 0.4) is *below* what Qwen3 was
 tuned for, and the model's own guidance warns that low temperature in
@@ -103,6 +115,13 @@ These are easy to conflate and have opposite recommendations:
   for anything beyond trivial edge cases — it gives a real correctness
   boost on subtle contract-level bugs. Double-check your runtime (goose,
   LM Studio, …) isn't silently disabling it.
+
+  Nano is a deliberate exception. Its generated `nano.toml` sets
+  `reasoning_effort = "none"`, because reasoning shares one output allowance
+  with the tool calls and patch text. To turn thinking on, set
+  `reasoning_effort` (for example `"medium"`). If `ferrus --debug` then
+  shows frequent output-limit continuations, raise `max_output_tokens`, or
+  remove it so Nano allocates the output budget automatically.
 - **Preserving thinking** — carrying previous turns' `<think>` blocks
   forward in multi-turn history — should stay **off**. Qwen3's own
   guidance says to strip reasoning from history in multi-turn use: the

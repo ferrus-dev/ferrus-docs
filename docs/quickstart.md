@@ -31,6 +31,10 @@ cargo install --path .
 
 Requires **Rust 1.95+**. ferrus is currently **alpha** — expect rough edges.
 
+The install scripts ship prebuilt release archives that include the
+experimental [Nano](/docs/nano) executor. `cargo install` uses the smaller
+default feature set. Add `--features nano-openai,nano-mcp` if you want Nano.
+
 ## 2. Scaffold
 
 Inside any project directory:
@@ -53,8 +57,9 @@ This creates:
 
 Tell ferrus which coding agent plays each role. Supported today:
 `claude-code`, `codex`, `qwen-code` (experimental), `goose` (experimental —
-convenient for local models), and `opencode` (experimental — supervisor/
-reviewer role only for now).
+convenient for local models), `opencode` (experimental — supervisor/
+reviewer role only for now), and `nano` (experimental — ferrus's own native
+harness, headless executor only; see [Nano](/docs/nano)).
 
 ```bash
 ferrus register --supervisor claude-code --executor codex
@@ -64,8 +69,10 @@ This writes the right MCP server config (`.claude/mcp-supervisor.json` /
 `.claude/mcp-executor.json` for Claude Code, `.codex/config.toml` for Codex,
 `.qwen/settings.json` for Qwen Code, `opencode.json` for opencode) so agents
 automatically pick up `ferrus serve` as a tool server. goose needs no config
-file — ferrus attaches its role-scoped MCP server at launch instead. See
-[Supported agents](/docs/agents) for backend-specific notes.
+file — ferrus attaches its role-scoped MCP server at launch instead. Nano
+needs no MCP config either: it calls ferrus natively and keeps its provider
+settings in `~/.ferrus/nano.toml`. See [Supported agents](/docs/agents) for
+backend-specific notes.
 
 ## 4. Drop into HQ
 

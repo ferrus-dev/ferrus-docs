@@ -14,6 +14,7 @@ const sidebars: SidebarsConfig = {
       items: ['repository-graph', 'project-memory'],
     },
     'agents',
+    'nano',
     'migration',
     'local-models',
   ],

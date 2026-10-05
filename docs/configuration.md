@@ -43,7 +43,7 @@ agent = "claude-code"    # agent for supervisor/reviewer role: claude-code | cod
 model = ""                # optional override; empty = agent default
 
 [hq.executor]
-agent = "codex"           # agent for executor role: claude-code | codex | qwen-code | goose (experimental); opencode executor is experimental/unstable
+agent = "codex"           # agent for executor role: claude-code | codex | qwen-code | goose (experimental) | nano (experimental, headless only); opencode executor is experimental/unstable
 model = ""
 ```
 
@@ -236,6 +236,12 @@ model = "gpt-5-codex-high"  # optional; empty = agent default
 Use `/model` inside HQ to update model overrides interactively. See
 [Supported agents](/docs/agents) for the full backend list, including the
 experimental `goose` and `opencode` adapters.
+
+`agent = "nano"` is valid only under `[hq.executor]`. Nano's provider
+settings (endpoint, model, token budgets) live outside the repository, in an
+owner-only `~/.ferrus/nano.toml` or the file named by `FERRUS_NANO_CONFIG`.
+The `model` key here is an optional override of that file's model. See
+[Nano](/docs/nano#provider-settings).
 
 ## Runtime files
 

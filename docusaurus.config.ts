@@ -111,6 +111,7 @@ const config: Config = {
             {label: 'State Machine', to: '/docs/state-machine'},
             {label: 'Repository Graph', to: '/docs/repository-graph'},
             {label: 'Project Memory', to: '/docs/project-memory'},
+            {label: 'Nano', to: '/docs/nano'},
             {label: 'Migrating from 0.2.x', to: '/docs/migration'},
             {label: 'Local Models', to: '/docs/local-models'},
           ],

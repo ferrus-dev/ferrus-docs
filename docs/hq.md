@@ -27,7 +27,7 @@ and retry/cycle counters in real time.
 | `/run [--limit N]` | Plan a **batch** run: queue tasks for every ready milestone in the selected spec (or up to `--limit`) and let the scheduler dispatch executors for all of them, bounded by `max_parallel_tasks`. |
 | `/check` | Run the ferrus check gate from HQ. Supports `--force` to run regardless of task status. |
 | `/supervisor` | Open an interactive supervisor session (no initial prompt). |
-| `/executor` | Open an interactive executor session (no initial prompt). |
+| `/executor` | Open an interactive executor session (no initial prompt). Not available when the executor is [Nano](/docs/nano), which runs headless only. |
 | `/resume` | Manually resume the executor headlessly; also recovers consultation by relaunching both supervisor and executor. |
 | `/review` | Manually spawn supervisor in review mode (escape hatch when automatic spawning failed). |
 | `/status` | Show task state, agent list, and session log paths. |

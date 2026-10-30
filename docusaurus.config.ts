@@ -82,10 +82,15 @@ const config: Config = {
           position: 'left',
         },
         {
+          to: '/docs/nano',
+          label: 'Nano',
+          position: 'left',
+          className: 'navbar__link--accent',
+        },
+        {
           to: '/docs/repository-graph',
           label: 'Repository graph',
           position: 'left',
-          className: 'navbar__link--accent',
         },
         {
           to: '/docs/migration',

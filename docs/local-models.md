@@ -9,9 +9,9 @@ slug: /local-models
 
 There are two local-model-friendly executors:
 
-- **[Nano](/docs/nano)** (new in 0.5): ferrus's own native harness. It talks
-  directly to LM Studio's OpenAI-compatible endpoint and runs headless as
-  the executor only.
+- **[Nano](/docs/nano)**: ferrus's own native harness. It talks directly to
+  LM Studio's OpenAI-compatible endpoint. It can play any role in HQ, and
+  since 0.6 it also runs [standalone](/docs/nano-standalone), without ferrus.
 - **`goose`**: MCP-native, needs no project config file, and works well
   against a local LM Studio or Ollama endpoint set with `goose configure`.
   See [Supported agents](/docs/agents).

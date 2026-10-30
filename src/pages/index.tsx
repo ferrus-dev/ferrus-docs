@@ -39,7 +39,7 @@ function Hero() {
           </Link>
         </div>
         <div className={styles.badgeRow}>
-          <span className={styles.badge}>alpha · v0.5.0</span>
+          <span className={styles.badge}>alpha · v0.6.0</span>
           <span className={styles.badge}>Apache-2.0</span>
           <span className={styles.badge}>Rust 1.95+</span>
         </div>
@@ -57,7 +57,9 @@ function Install() {
       </Heading>
 
       <p className={styles.sectionLead}>
-        ferrus ships as a single Rust crate. Install it with a single command, from crates.io or build from source.
+        ferrus ships as a single Rust crate with two binaries:{' '}
+        <code>ferrus</code> and <code>ferrus-nano</code>. Install either or
+        both with one command, from crates.io, or build from source.
       </p>
 
       <div className={styles.installPrimary}>
@@ -68,12 +70,10 @@ function Install() {
       <div className={styles.twoCol}>
         <div>
           <h3 className={styles.colTitle}>From crates.io</h3>
-          <CodeBlock language="bash">{`# stable — published on crates.io
-cargo install ferrus
-# or pin an exact version:
-cargo install --locked ferrus@0.5.0-alpha.1
-# with the experimental Nano executor:
-cargo install --locked ferrus@0.5.0-alpha.1 --features nano-openai,nano-mcp`}</CodeBlock>
+          <CodeBlock language="bash">{`# alpha releases need an exact version
+cargo install --locked ferrus@0.6.0-alpha.1
+# with the experimental Nano agent and ferrus-nano:
+cargo install --locked ferrus@0.6.0-alpha.1 --features nano-openai,nano-mcp`}</CodeBlock>
         </div>
 
         <div>
@@ -122,21 +122,30 @@ function Nano() {
           <span className={styles.prompt}>$</span> Nano
         </Heading>
         <p className={styles.sectionLead}>
-          New in 0.5: ferrus's own native agent harness. Nano runs as a
-          headless Executor against a local OpenAI-compatible model such as
-          LM Studio. It calls ferrus operations (check, submit, the repository
-          graph, project memory) directly in Rust, with no MCP round-trip.
+          New in 0.6: ferrus's native agent harness is interactive, and it
+          runs on its own. <code>ferrus-nano</code> opens a coding conversation
+          in any directory, Git or not, against a local OpenAI-compatible model
+          such as LM Studio, with no HQ, registration, or task database.
         </p>
-        <CodeBlock language="bash">{`ferrus register --supervisor claude-code \\
-  --executor nano --executor-model <loaded-model-id>   # creates ~/.ferrus/nano.toml
-ferrus                                                 # then /task as usual`}</CodeBlock>
+        <CodeBlock language="bash">{`ferrus-nano --workspace . --interactive                     # talk to it in this directory
+ferrus-nano --workspace . --prompt "Fix the failing test"   # or send one headless request
+ferrus-nano --workspace . --interactive --resume <id>       # pick up an earlier session`}</CodeBlock>
+        <p className={styles.sectionLead}>
+          Inside HQ, <code>/executor</code> opens the same conversation on your
+          project and <code>/attach</code> lets you steer a running task. Nano
+          can now play every role: Supervisor, Executor, Reviewer, and
+          Consultant, calling ferrus operations directly in Rust with no MCP
+          round-trip.
+        </p>
         <p className={styles.sectionLead}>
           It ships with digest-checked patches, bounded shell sessions, a
           token-budgeted working set with compaction, opt-in stdio MCP tools,
           and crash recovery that reconciles every in-flight effect.
-          Experimental: Executor-only and headless for now.
+          Experimental, and not sandboxed: commands run with your permissions.
         </p>
         <p className={styles.sectionLead}>
+          <Link to="/docs/nano-standalone">Get started with standalone Nano →</Link>
+          {' · '}
           <Link to="/docs/nano">Read the Nano docs →</Link>
         </p>
       </div>
@@ -184,7 +193,7 @@ function Features() {
     },
     {
       title: 'Agent-agnostic',
-      body: 'Claude Code, Codex, Qwen Code, goose, opencode, and the native Nano executor are interchangeable workers — including local models.',
+      body: 'Claude Code, Codex, Qwen Code, goose, opencode, and the native Nano harness are interchangeable workers — including local models.',
     },
     {
       title: 'Crash-safe',

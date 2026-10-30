@@ -15,10 +15,15 @@ Get ferrus running against a project in under a minute.
 
 <InstallTabs />
 
-From [crates.io](https://crates.io/crates/ferrus):
+The **Full bundle** is the right choice for this guide. Choose **Standalone
+Nano** if you only want a coding agent, with no orchestration: see
+[Standalone Nano](/docs/nano-standalone) and skip the rest of this page.
+
+From [crates.io](https://crates.io/crates/ferrus). ferrus only has alpha
+releases so far, so `cargo install` needs an explicit version:
 
 ```bash
-cargo install ferrus
+cargo install ferrus --version 0.6.0-alpha.1 --locked
 ```
 
 Or build from source:
@@ -29,11 +34,30 @@ cd ferrus
 cargo install --path .
 ```
 
-Requires **Rust 1.95+**. ferrus is currently **alpha** — expect rough edges.
+Cargo builds require **Rust 1.95+**. ferrus is currently **alpha** — expect
+rough edges.
 
 The install scripts ship prebuilt release archives that include the
-experimental [Nano](/docs/nano) executor. `cargo install` uses the smaller
+experimental [Nano](/docs/nano) agent. `cargo install` uses the smaller
 default feature set. Add `--features nano-openai,nano-mcp` if you want Nano.
+
+### Install options
+
+The install scripts read these environment variables:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `FERRUS_INSTALL_DIR` | `~/.local/bin` (`$XDG_BIN_HOME` if set), or `%LOCALAPPDATA%\ferrus\bin` on Windows | Where the binaries go. |
+| `FERRUS_INSTALL_VERSION` | `latest` | An exact release tag, such as `0.6.0-alpha.1`. |
+| `FERRUS_INSTALL_COMPONENTS` | `all` | `all`, `ferrus`, or `nano`. An explicit `--components` or `-Components` takes precedence, and the Standalone Nano installer always installs `nano`. |
+
+```bash
+curl -fsSL https://ferrus.dev/cli/install.sh | FERRUS_INSTALL_DIR="$HOME/bin" sh
+```
+
+Every option verifies the release archive's SHA-256 checksum before installing,
+and leaves any binary you didn't select in place. Selecting `ferrus` keeps the
+Nano support compiled into it.
 
 ## 2. Scaffold
 
@@ -59,7 +83,7 @@ Tell ferrus which coding agent plays each role. Supported today:
 `claude-code`, `codex`, `qwen-code` (experimental), `goose` (experimental —
 convenient for local models), `opencode` (experimental — supervisor/
 reviewer role only for now), and `nano` (experimental — ferrus's own native
-harness, headless executor only; see [Nano](/docs/nano)).
+harness, for either role; see [Nano](/docs/nano)).
 
 ```bash
 ferrus register --supervisor claude-code --executor codex

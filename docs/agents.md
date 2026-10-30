@@ -25,7 +25,7 @@ instead of going through MCP.
 | **Qwen Code** | experimental | `.qwen/settings.json` |
 | **goose** | experimental | none — attached at launch via `--with-extension` |
 | **opencode** | experimental | `opencode.json` |
-| **Nano** | experimental · headless Executor only | `[hq.executor]` in `ferrus.toml`; creates `~/.ferrus/nano.toml` on first registration |
+| **Nano** | experimental | `[hq.supervisor]` / `[hq.executor]` in `ferrus.toml`; creates `~/.ferrus/nano.toml` on first registration |
 
 Each external backend loads `ferrus serve` as an MCP server so its tool
 calls flow back into the ferrus task state machine. Nano needs no MCP
@@ -62,14 +62,18 @@ not yet supported.
 
 ### Nano
 
-New in 0.5.0-alpha.1. Nano is ferrus's built-in agent harness and talks to
-an OpenAI-compatible Chat Completions endpoint, such as a local LM Studio
-server. It runs **only as a headless Executor**, so pair it with an external
-supervisor:
+Nano is ferrus's built-in agent harness and talks to an OpenAI-compatible
+Chat Completions endpoint, such as a local LM Studio server. Pair it with an
+external supervisor, or use it for both roles:
 
 ```bash
 ferrus register --supervisor claude-code --executor nano --executor-model YOUR_LOADED_MODEL_ID
+ferrus register --supervisor nano --supervisor-model YOUR_LOADED_MODEL_ID --executor nano
 ```
+
+Since 0.6, HQ renders [Nano conversations](/docs/nano-hq#conversations)
+natively, and Nano also runs [standalone](/docs/nano-standalone), with no
+ferrus project at all.
 
 Prebuilt release archives include Nano. A `cargo install` needs
 `--features nano-openai,nano-mcp`. See [Nano](/docs/nano) for setup,
@@ -87,8 +91,9 @@ you can mix and match:
   exits after approve/reject. In practice, the Reviewer is the Supervisor
   backend relaunched in review mode.
 
-Nano can only play the **Executor**. Registering it as `--supervisor` is
-rejected.
+Nano can play all three, plus the Consultant. As the Reviewer it needs a Git
+project with the repository graph enabled. See
+[Reviewer and Consultant](/docs/nano-hq#reviewer-and-consultant).
 
 ## Register
 
@@ -104,8 +109,8 @@ Model overrides are optional — omit them to use each agent's default. You
 can also change them interactively from HQ with `/model`, or leave a model
 unset and target a local backend (goose/opencode/Nano) for cost-free
 iteration. Nano is the exception: its first registration needs
-`--executor-model`, because ferrus writes that model into the new
-`nano.toml`.
+`--executor-model` or `--supervisor-model`, because ferrus writes that model
+into the new `nano.toml`.
 
 ## Tools exposed per role
 
@@ -123,8 +128,9 @@ physically cannot call `approve`, and a supervisor physically cannot call
 `submit`. This is what makes the loop safe to drive from "untrusted"
 agents.
 
-Nano doesn't use `ferrus serve`. It gets its own executor-only native tool
-set, listed in [What Nano can do today](/docs/nano#what-nano-can-do-today).
+Nano doesn't use `ferrus serve`. Each of its profiles gets its own native tool
+set, enforced by the host in the same way. See
+[What Nano can do today](/docs/nano#what-nano-can-do-today).
 
 ### Retrieval tools
 

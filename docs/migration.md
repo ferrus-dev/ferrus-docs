@@ -36,7 +36,7 @@ seat. What changed is what's underneath.
 ### 1. Update the binary
 
 ```bash
-cargo install ferrus
+cargo install ferrus --version 0.6.0-alpha.1 --locked
 # or re-run install.sh / install.ps1 to pull the latest release
 ```
 

@@ -1,68 +1,78 @@
 ---
 id: nano
-title: Nano (native executor)
+title: Nano
 sidebar_position: 6
 slug: /nano
 ---
 
+import InstallTabs from '@site/src/components/InstallTabs';
+
 # Nano
 
-**Nano** is ferrus's own coding-agent harness, new in **0.5.0-alpha.1**. It is
-a small Rust agent runtime built into the `ferrus` binary. External backends
-reach ferrus through MCP. Nano calls ferrus operations (claim, heartbeat,
-check, submit, repository graph, project memory) directly as Rust functions,
-with no loopback MCP server or JSON-RPC hop. It talks to a model through an
-OpenAI-compatible Chat Completions endpoint. The first target is a local
-[LM Studio](https://lmstudio.ai) server.
+**Nano** is ferrus's own coding-agent harness: a small Rust agent runtime that
+talks to a model through an OpenAI-compatible Chat Completions endpoint. The
+first target is a local [LM Studio](https://lmstudio.ai) server.
 
-:::caution[Experimental: headless Executor only]
-In this release Nano runs **only as a headless Executor** launched by HQ.
-It cannot be the Supervisor or Reviewer, and interactive `/executor`
-sessions are rejected. Pair it with an external supervisor such as
-`claude-code` or `codex`. There are no measured performance claims yet, and
-coding quality depends heavily on the model you load.
+**New in 0.6.0-alpha.1:** Nano is interactive, and it no longer needs ferrus
+around it. The `ferrus-nano` binary opens a coding conversation in any
+directory, with no HQ, no registration, and no task database. Inside HQ, you
+can now talk to Nano directly, and it can play the Supervisor, Reviewer, and
+Consultant roles as well as the Executor.
+
+:::caution[Experimental]
+There are no measured performance claims yet, and coding quality depends
+heavily on the model you load. Nano has no OS sandbox: its shell commands run
+with your user's permissions, with no approval prompt for each command.
 :::
+
+## Three ways to run Nano
+
+| Mode | Start it with | You need | Use it for |
+|---|---|---|---|
+| **[Standalone](/docs/nano-standalone)** | `ferrus-nano` in a terminal | A provider file | Coding in any directory, Git or not, without orchestration |
+| **[HQ conversation](/docs/nano-hq#conversations)** | `/executor` or `/attach` in HQ | A ferrus project with Nano as the Executor | Talking to Nano about a project, or steering a running task |
+| **[Managed roles](/docs/nano-hq)** | `/task`, `/run`, `/spec` in HQ | A ferrus project with Nano registered | The normal Supervisor → Executor → Reviewer loop |
+
+All three share the same engine, provider file, native tools, and durable
+journal. External backends reach ferrus through MCP. Nano calls ferrus
+operations (claim, heartbeat, check, submit, repository graph, project memory)
+directly as Rust functions, with no loopback MCP server or JSON-RPC hop.
 
 ## Install
 
-Prebuilt release archives already include Nano, together with external MCP
-tool support. The quick-install scripts use these archives:
+Release archives contain two binaries: `ferrus` for HQ and orchestration, and
+`ferrus-nano` for the standalone agent. Nano and external MCP tool support are
+compiled into both.
+
+<InstallTabs defaultComponent="nano" />
+
+- **Full bundle** installs both binaries.
+- **Standalone Nano** installs only `ferrus-nano`, which is all you need
+  outside a ferrus project.
+- **Ferrus only** installs only `ferrus`, which can still run Nano inside HQ.
+
+Every option downloads and verifies the same archive, and leaves any binary
+you didn't select in place. See [Install options](/docs/quickstart#install-options)
+to change the destination or pin a release.
+
+Cargo's default feature set does **not** include Nano, and ferrus only has
+alpha releases so far, so name both the version and the features:
 
 ```bash
-curl -fsSL https://ferrus.dev/cli/install.sh | sh
+cargo install ferrus --version 0.6.0-alpha.1 --locked --profile dist --features nano-openai,nano-mcp
 ```
 
-Cargo's default feature set does **not** include Nano. From crates.io, enable
-both features explicitly:
+This installs both binaries. Add `--bin ferrus-nano` to install only the
+standalone agent. You can use `nano-openai` alone if you don't need external
+MCP tools. A `ferrus` build without `nano-openai` reports the missing feature
+before HQ prepares a task, and `ferrus-nano` is not built at all.
 
-```bash
-cargo install ferrus --version 0.5.0-alpha.1 --locked --profile dist --features nano-openai,nano-mcp
-```
+## Set up a provider
 
-When building from source, use `--features nano-openai,nano-mcp`. You can use
-`nano-openai` alone if you don't need external MCP tools. A build without
-`nano-openai` reports the missing feature before HQ prepares a task.
-
-## Set up with LM Studio
-
-1. Start LM Studio's server on `http://127.0.0.1:1234` and load a model that
-   supports **tool calls**.
-2. Register Nano as the executor with the **exact** model ID LM Studio shows:
-
-   ```bash
-   ferrus register --supervisor claude-code --executor nano --executor-model YOUR_LOADED_MODEL_ID
-   ```
-
-3. Enter HQ and use the normal `/task` or `/run` workflow:
-
-   ```bash
-   ferrus
-   ```
-
-On the first registration, ferrus creates an owner-only provider file at
-`~/.ferrus/nano.toml` and prints the resolved path. On Windows the file lives
-in your user profile, for example `C:\Users\Alice\.ferrus\nano.toml`. The file
-starts with three settings:
+Start LM Studio's server on `http://127.0.0.1:1234` and load a model that
+supports **tool calls**. Nano then reads its settings from a private provider
+file, by default `~/.ferrus/nano.toml`. On Windows the file lives in your user
+profile, for example `C:\Users\Alice\.ferrus\nano.toml`.
 
 ```toml
 base_url = "http://127.0.0.1:1234/v1"
@@ -70,21 +80,50 @@ model = "YOUR_LOADED_MODEL_ID"
 reasoning_effort = "none"
 ```
 
-Registration never contacts the provider and never replaces an existing
-file. It writes `[hq.executor] agent = "nano"` to `ferrus.toml` and creates
-no MCP config entry. On later registrations, `--executor-model` overrides the
-model from the file. Leave the flag out to clear the override and use the
-file's `model`.
+Use the **exact** model ID LM Studio shows. There are two ways to create the
+file.
 
-To use a different provider file, set `FERRUS_NANO_CONFIG` to an absolute,
-owner-only path. It must be set in the shell that runs **both** `ferrus
-register` and HQ:
+### With `ferrus register`
+
+In a ferrus project, registration creates the file on first use and prints the
+resolved path:
+
+```bash
+ferrus register --supervisor claude-code --executor nano --executor-model YOUR_LOADED_MODEL_ID
+ferrus
+```
+
+To run Nano in every role, register it for both. One model flag is enough,
+because both roles read the same file:
+
+```bash
+ferrus register --supervisor nano --supervisor-model YOUR_LOADED_MODEL_ID --executor nano
+```
+
+Registration never contacts the provider and never replaces an existing
+file. It writes `agent = "nano"` to `ferrus.toml` and creates no MCP config
+entry. On later registrations, `--executor-model` and `--supervisor-model`
+override the model from the file. Leave a flag out to clear that override and
+use the file's `model`.
+
+### By hand
+
+Without `ferrus`, create the file yourself. See the
+[standalone quick start](/docs/nano-standalone#quick-start).
+
+### Using a different file
+
+Set `FERRUS_NANO_CONFIG` to an absolute, owner-only path. In a ferrus project
+it must be set in the shell that runs **both** `ferrus register` and HQ:
 
 ```bash
 export FERRUS_NANO_CONFIG=/absolute/private/path/nano.toml
 ferrus register --executor nano
 ferrus
 ```
+
+`ferrus-nano` also accepts `--config`, which takes precedence over the
+variable.
 
 ### Provider settings
 
@@ -109,7 +148,7 @@ explicitly, and so does an inline `api_key`.
 
 Three advanced stream limits are also accepted: `wire_bytes`,
 `event_bytes`, and `max_tool_calls`. See the
-[provider contract](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano-provider.md)
+[provider contract](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-provider.md)
 for them. `temperature` is the only sampling parameter Nano sends. Set
 `top_p`, `top_k`, and penalties as the model's defaults in LM Studio. For
 tuning sampling, context size, and quantization on local models, see
@@ -117,9 +156,18 @@ tuning sampling, context size, and quantization on local models, see
 
 ## What Nano can do today
 
-Nano only gets tools that fit the Executor role. It cannot create, approve,
-or reset tasks. Lifecycle mutations always pass through the same SQLite
-transactions and guards that external agents use via MCP.
+The host picks the tools for each profile, independently of what the model
+asks for. The Executor gets everything below.
+[Standalone](/docs/nano-standalone#what-it-can-do) and
+[direct HQ](/docs/nano-hq#direct-and-managed-conversations) sessions get the
+file, command, and context tools without the managed lifecycle.
+[Supervisor](/docs/nano-hq#nano-as-supervisor) and
+[Reviewer](/docs/nano-hq#reviewer-and-consultant) profiles can't edit code or
+run commands.
+
+The Executor cannot create, approve, or reset tasks. Lifecycle mutations always
+pass through the same SQLite transactions and guards that external agents use
+via MCP.
 
 ### Code in the task worktree
 
@@ -188,6 +236,8 @@ transactions and guards that external agents use via MCP.
 
 - Each run writes a durable journal under
   `~/.ferrus/projects/<project-id>/nano/sessions/<run>/`.
+  Standalone sessions keep theirs under
+  [`~/.ferrus/standalone/`](/docs/nano-standalone#sessions-and-continuation).
 - When HQ relaunches an interrupted Executor, Nano reconciles every
   in-flight effect before inferring again:
   - an unfinished patch is confirmed or ruled out by its before/after
@@ -199,9 +249,9 @@ transactions and guards that external agents use via MCP.
 
 ### External MCP tools
 
-With `nano-mcp`, Nano can call tools from local **stdio** MCP servers that you
-list explicitly. Point `mcp_config_file` in `nano.toml` to a second
-owner-only file:
+With `nano-mcp`, the Executor and standalone Nano can call tools from local
+**stdio** MCP servers that you list explicitly. Point `mcp_config_file` in
+`nano.toml` to a second owner-only file:
 
 ```toml
 [[servers]]
@@ -221,45 +271,13 @@ Arguments are validated against the pinned input schema, and outputs are
 capped at 24 KiB. HTTP transport, OAuth, MCP resources, prompts, sampling,
 and elicitation are not supported yet.
 
-## How HQ runs Nano
-
-For each dispatch, HQ starts `ferrus nano run` in the task's prepared
-worktree. HQ still owns the worktree and baseline, process supervision,
-dispatch accounting, review, and recovery. Nano receives versioned JSONL
-`start`/`cancel` commands on stdin and emits progress events on stdout.
-
-- `/stop` sends `cancel` first and gives Nano two seconds to clean up. After
-  that, HQ falls back to killing the process group.
-- `ferrus --debug` also shows tool requests, model failures, output-limit
-  continuations, and terminal outcomes in the HQ transcript.
-- Logs go to `.ferrus/logs/executor_<task>_<timestamp>_<run>.log`. Look for
-  `Nano diagnostic` entries. The full event stream is in the session's
-  `events.jsonl`.
-- `ferrus nano --version` prints the bundled ferrus version without loading
-  provider settings.
-
-### When a run fails
-
-These failures mark the task **Failed** with a specific code, and Nano exits
-non-zero:
-
-- a non-retryable provider error: `nano_provider_failed` or
-  `nano_provider_protocol`;
-- an exhausted token, turn, tool-call, retry, or no-progress budget:
-  `nano_limit_*`.
-
-Budgets belong to the work phase, so restarting Nano doesn't refill them, and
-changing settings doesn't silently restart the task. For longer tasks, raise
-`session_tokens` (for example `session_tokens = 2000000`) before the next
-work phase.
-
 ## Not there yet
 
-- Interactive sessions (`/executor`), and the Supervisor and Reviewer roles.
-- A standalone `ferrus-nano` executable.
-- OS-level sandboxing. The only backend is `trusted_local`, so shell commands
-  run with your user's permissions. The worktree and scrubbed environment are
-  not a security boundary.
+- OS-level sandboxing and per-command approval. The only backend is
+  `trusted_local`, so shell commands run with your user's permissions. The
+  worktree and scrubbed environment are not a security boundary.
+- Native review outside Git, or of a submission without a frozen graph view.
+  See [Reviewer and Consultant](/docs/nano-hq#reviewer-and-consultant).
 - Providers other than Chat Completions (for example, the Responses API).
 - Published benchmarks against external agents. The pinned evaluation suite
   exists, but measured comparisons are still pending.
@@ -268,10 +286,12 @@ work phase.
 
 The in-repo design notes go deeper than this page:
 
-- [Launch and HQ events](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano-launch.md)
-- [Provider contract](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano-provider.md)
-- [Workspace tools](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano-workspace.md) and [command sessions](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano-commands.md)
-- [Native context](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano-context.md), [working set](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano-working-set.md), and [compaction](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano-compaction.md)
-- [Managed lifecycle](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano-lifecycle.md) and [sessions and recovery](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano-sessions.md)
-- [External MCP tools](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano-mcp.md)
-- [Architecture](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano-architecture.md)
+- [Launch and HQ events](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-launch.md)
+- [Standalone Nano](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-standalone.md) and [HQ conversations](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-interactive.md)
+- [Supervisor authoring](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-supervisor.md) and [review and consultation](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-review.md)
+- [Provider contract](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-provider.md)
+- [Workspace tools](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-workspace.md) and [command sessions](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-commands.md)
+- [Native context](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-context.md), [working set](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-working-set.md), and [compaction](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-compaction.md)
+- [Managed lifecycle](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-lifecycle.md) and [sessions and recovery](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-sessions.md)
+- [External MCP tools](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-mcp.md)
+- [Architecture](https://github.com/ferrus-dev/ferrus/blob/main/docs/ferrus-nano/ferrus-nano-architecture.md)

@@ -2,3 +2,6 @@
 # https://ferrus.dev/cli/install.sh -> latest GitHub release asset
 /cli/install.sh   https://github.com/ferrus-dev/ferrus/releases/latest/download/install.sh   302
 /cli/install.ps1  https://github.com/ferrus-dev/ferrus/releases/latest/download/install.ps1  302
+
+# /nano/install.sh and /nano/install.ps1 are static wrappers (static/nano/), not
+# redirects: a redirect can't pass the component selection to the shared installer.
